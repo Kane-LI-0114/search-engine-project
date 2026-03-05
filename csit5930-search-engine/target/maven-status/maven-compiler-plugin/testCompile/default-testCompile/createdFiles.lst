@@ -1,0 +1,7 @@
+hk/ust/csit5930/search/indexer/PostingListTest.class
+hk/ust/csit5930/search/search/SimilarityCalculatorTest.class
+hk/ust/csit5930/search/crawler/PageFetcherTest.class
+hk/ust/csit5930/search/web/SearchServletTest.class
+hk/ust/csit5930/search/indexer/PorterStemmerTest.class
+hk/ust/csit5930/search/search/QueryParserTest.class
+hk/ust/csit5930/search/indexer/TextPreprocessorTest.class
