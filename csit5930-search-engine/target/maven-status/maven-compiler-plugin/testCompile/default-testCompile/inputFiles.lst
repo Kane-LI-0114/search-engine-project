@@ -1,7 +1,0 @@
-/Users/lijinchuan/Documents/HKUST/CSIT5930-SearchEngine/project/search-engine-project/csit5930-search-engine/src/test/java/hk/ust/csit5930/search/web/SearchServletTest.java
-/Users/lijinchuan/Documents/HKUST/CSIT5930-SearchEngine/project/search-engine-project/csit5930-search-engine/src/test/java/hk/ust/csit5930/search/indexer/PorterStemmerTest.java
-/Users/lijinchuan/Documents/HKUST/CSIT5930-SearchEngine/project/search-engine-project/csit5930-search-engine/src/test/java/hk/ust/csit5930/search/search/QueryParserTest.java
-/Users/lijinchuan/Documents/HKUST/CSIT5930-SearchEngine/project/search-engine-project/csit5930-search-engine/src/test/java/hk/ust/csit5930/search/crawler/PageFetcherTest.java
-/Users/lijinchuan/Documents/HKUST/CSIT5930-SearchEngine/project/search-engine-project/csit5930-search-engine/src/test/java/hk/ust/csit5930/search/indexer/PostingListTest.java
-/Users/lijinchuan/Documents/HKUST/CSIT5930-SearchEngine/project/search-engine-project/csit5930-search-engine/src/test/java/hk/ust/csit5930/search/indexer/TextPreprocessorTest.java
-/Users/lijinchuan/Documents/HKUST/CSIT5930-SearchEngine/project/search-engine-project/csit5930-search-engine/src/test/java/hk/ust/csit5930/search/search/SimilarityCalculatorTest.java

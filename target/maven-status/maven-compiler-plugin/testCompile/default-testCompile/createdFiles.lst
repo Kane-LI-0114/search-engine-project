@@ -1,0 +1,7 @@
+search/crawler/PageFetcherTest.class
+search/indexer/TextPreprocessorTest.class
+search/search/QueryParserTest.class
+search/indexer/PorterStemmerTest.class
+search/web/SearchServletTest.class
+search/indexer/PostingListTest.class
+search/search/SimilarityCalculatorTest.class
