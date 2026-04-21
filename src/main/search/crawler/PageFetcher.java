@@ -16,6 +16,8 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import org.jsoup.Jsoup;
+
 /**
  * Handles HTTP page fetching, metadata extraction, and HTML parsing.
  * Uses HttpURLConnection for HTTP metadata (Last-Modified, Content-Length)
@@ -123,6 +125,7 @@ public class PageFetcher {
                 new TagNameFilter("title"), true);
             if (titleNodes != null && titleNodes.size() > 0) {
                 String title = titleNodes.elementAt(0).toPlainTextString().trim();
+                title = Jsoup.parse(title).text();
                 if (!title.isEmpty()) {
                     return title;
                 }
@@ -146,12 +149,16 @@ public class PageFetcher {
             NodeList bodyNodes = nodeList.extractAllNodesThatMatch(
                 new TagNameFilter("body"), true);
             if (bodyNodes != null && bodyNodes.size() > 0) {
-                return bodyNodes.elementAt(0).toPlainTextString().trim();
+                String body = bodyNodes.elementAt(0).toPlainTextString().trim();
+                body = Jsoup.parse(body).text();
+                return body;
             }
             // Fallback: use all text content by visiting each node
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < nodeList.size(); i++) {
-                sb.append(nodeList.elementAt(i).toPlainTextString());
+                String bodyi = nodeList.elementAt(i).toPlainTextString();
+                bodyi = Jsoup.parse(bodyi).text();
+                sb.append(bodyi);
             }
             return sb.toString().trim();
         } catch (Exception e) {

@@ -31,6 +31,13 @@
             <version>2.1</version>
         </dependency>
 
+        <!-- Jsoup HTML parser -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.22.2</version>
+        </dependency>
+
         <!-- JDBM from http://jdbm.sourceforge.net/ -->
         <dependency>
             <groupId>jdbm</groupId>
