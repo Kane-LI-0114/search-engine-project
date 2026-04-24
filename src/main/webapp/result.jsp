@@ -279,11 +279,15 @@
 
                 <input type="text"
                        name="query"
+                       id="searchInput"
                        class="search-input"
                        placeholder="Enter your search query..."
                        autofocus
                        aria-label="Search query"
+                       autocomplete="off"
+                       list="kw-suggestions"
                        value="<%= esc(request.getAttribute("query")) %>" />
+                <datalist id="kw-suggestions"></datalist>
 
                 <%--                <span class="icon-right" aria-hidden="true">--%>
                 <%--<svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">--%>
@@ -520,6 +524,47 @@
         } else {
             initLinkToggles();
         }
+    })();
+
+    // Enhancement 3: Autocomplete via /suggest endpoint
+    (function(){
+        const input = document.getElementById('searchInput');
+        const dl    = document.getElementById('kw-suggestions');
+        if (!input || !dl) return;
+        let debounceTimer = null;
+        input.addEventListener('input', function(){
+            clearTimeout(debounceTimer);
+            const q = input.value.trim();
+            if (q.length < 2) { dl.innerHTML = ''; return; }
+            debounceTimer = setTimeout(function(){
+                fetch('suggest?q=' + encodeURIComponent(q))
+                    .then(function(r){ return r.json(); })
+                    .then(function(items){
+                        dl.innerHTML = '';
+                        items.forEach(function(s){
+                            const opt = document.createElement('option');
+                            opt.value = s;
+                            dl.appendChild(opt);
+                        });
+                    })
+                    .catch(function(){});
+            }, 200);
+        });
+    })();
+
+    // Enhancement 4: Save query to history on result page load
+    (function(){
+        const HIST_KEY = 'csit5930_history_v1';
+        const MAX_HIST = 10;
+        const rawQuery = '<%= esc(request.getAttribute("query")) %>';
+        if (!rawQuery) return;
+        try {
+            let h = JSON.parse(localStorage.getItem(HIST_KEY) || '[]');
+            h = h.filter(function(x){ return x !== rawQuery; });
+            h.unshift(rawQuery);
+            if (h.length > MAX_HIST) h = h.slice(0, MAX_HIST);
+            localStorage.setItem(HIST_KEY, JSON.stringify(h));
+        } catch(e){}
     })();
 </script>
 </body>

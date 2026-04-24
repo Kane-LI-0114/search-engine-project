@@ -36,4 +36,9 @@ public final class Config {
 
     /** Date format for display */
     public static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+    // Enhancement 6: PageRank
+    public static final double PAGERANK_DAMPING    = 0.85;
+    public static final int    PAGERANK_ITERATIONS = 50;
+    public static final double PAGERANK_WEIGHT     = 0.3;
 }

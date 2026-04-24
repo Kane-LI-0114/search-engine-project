@@ -176,7 +176,7 @@
     </header>
 
     <div class="search-card">
-        <form class="search-form" action="search" method="GET">
+        <form class="search-form" id="searchForm" action="search" method="GET">
             <div class="input">
 <span class="icon-left" aria-hidden="true">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -184,15 +184,22 @@
 <circle cx="11" cy="11" r="6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 </span>
-                <input type="text" name="query" class="search-input" placeholder="Enter your search query..." autofocus aria-label="Search query">
+                <input type="text" id="searchInput" name="query" class="search-input" placeholder="Enter your search query..." autofocus aria-label="Search query" autocomplete="off" list="kw-suggestions">
+                <datalist id="kw-suggestions"></datalist>
             </div>
             <button type="submit" class="search-btn">Search</button>
         </form>
 
         <p class="hint">
             Supports phrase search with double quotes. Example: <code style="background:transparent;padding:2px 6px;border-radius:4px;border:1px solid rgba(0,0,0,0.04);">"hong kong" universities</code>
+            &nbsp;|&nbsp; <a href="keywords" style="color:var(--accent);text-decoration:none;font-size:13px;">Browse Keywords</a>
         </p>
-    </div></div>
+    </div>
+
+    <!-- AJAX results injected here (Enhancement 3) -->
+    <div id="ajax-results"></div>
+
+</div>
 
 <script>
     (function(){
@@ -254,6 +261,77 @@
                 applyTheme(isDark ? 'light' : 'dark', true); // animate on user toggle
             });
         }
+
+        // Enhancement 3: Autocomplete via /suggest endpoint
+        (function(){
+            const input = document.getElementById('searchInput');
+            const dl    = document.getElementById('kw-suggestions');
+            if (!input || !dl) return;
+            let debounceTimer = null;
+            input.addEventListener('input', function(){
+                clearTimeout(debounceTimer);
+                const q = input.value.trim();
+                if (q.length < 2) { dl.innerHTML = ''; return; }
+                debounceTimer = setTimeout(function(){
+                    fetch('suggest?q=' + encodeURIComponent(q))
+                        .then(function(r){ return r.json(); })
+                        .then(function(items){
+                            dl.innerHTML = '';
+                            items.forEach(function(s){
+                                const opt = document.createElement('option');
+                                opt.value = s;
+                                dl.appendChild(opt);
+                            });
+                        })
+                        .catch(function(){});
+                }, 200);
+            });
+        })();
+
+        // Enhancement 4: Query history (localStorage)
+        (function(){
+            const HIST_KEY = 'csit5930_history_v1';
+            const MAX_HIST = 10;
+            const form  = document.getElementById('searchForm');
+            const input = document.getElementById('searchInput');
+            if (!form || !input) return;
+
+            function getHistory(){
+                try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch(e){ return []; }
+            }
+            function saveHistory(q){
+                let h = getHistory().filter(function(x){ return x !== q; });
+                h.unshift(q);
+                if (h.length > MAX_HIST) h = h.slice(0, MAX_HIST);
+                try { localStorage.setItem(HIST_KEY, JSON.stringify(h)); } catch(e){}
+            }
+            function renderHistory(){
+                const h = getHistory();
+                const container = document.getElementById('ajax-results');
+                if (!container) return;
+                if (h.length === 0) { container.innerHTML = ''; return; }
+                let html = '<div style="margin-top:16px;font-size:13px;color:var(--muted);">'
+                    + '<span style="font-weight:600;">Recent searches:</span> ';
+                h.forEach(function(q, i){
+                    html += '<a href="search?query=' + encodeURIComponent(q)
+                        + '" style="color:var(--accent);text-decoration:none;margin-right:10px;">'
+                        + q.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                        + '</a>';
+                });
+                html += '<button onclick="clearHistory()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;margin-left:4px;">Clear</button>';
+                html += '</div>';
+                container.innerHTML = html;
+            }
+            window.clearHistory = function(){
+                try { localStorage.removeItem(HIST_KEY); } catch(e){}
+                renderHistory();
+            };
+            form.addEventListener('submit', function(){
+                const q = input.value.trim();
+                if (q) saveHistory(q);
+            });
+            renderHistory();
+        })();
     })();
 </script>
 </body>

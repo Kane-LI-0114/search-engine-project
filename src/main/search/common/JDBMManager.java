@@ -31,6 +31,9 @@ public class JDBMManager {
     // System configuration HTree
     private HTree systemConfig; // String key -> String value (counters, metadata)
 
+    // Enhancement 6: PageRank scores
+    private HTree pageRankScores; // Integer pageId -> Double score
+
     /**
      * Private constructor. Initializes JDBM RecordManager and loads or creates all HTrees.
      *
@@ -46,6 +49,7 @@ public class JDBMManager {
         bodyIndex = loadOrCreateHTree("bodyIndex");
         pageMetadata = loadOrCreateHTree("pageMetadata");
         systemConfig = loadOrCreateHTree("systemConfig");
+        pageRankScores = loadOrCreateHTree("pageRankScores");
     }
 
     /**
@@ -104,6 +108,9 @@ public class JDBMManager {
 
     /** Returns the system configuration HTree. */
     public HTree getSystemConfig() { return systemConfig; }
+
+    /** Returns the PageRank scores HTree (pageId -> Double). */
+    public HTree getPageRankScores() { return pageRankScores; }
 
     /**
      * Commits all pending changes to disk.

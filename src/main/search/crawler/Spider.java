@@ -4,6 +4,7 @@ import search.common.Config;
 import search.common.ExceptionHandler;
 import search.common.JDBMManager;
 import search.crawler.model.CrawledPage;
+import search.enhancement.PageRankCalculator;
 import search.indexer.Indexer;
 
 import java.util.*;
@@ -69,6 +70,24 @@ public class Spider {
             processedUrls.add(currentUrl);
 
             try {
+                // Check Last-Modified via HEAD request before full fetch
+                long remoteLastModified = pageFetcher.getLastModified(currentUrl);
+                if (!urlValidator.needReindex(currentUrl, remoteLastModified)) {
+                    ExceptionHandler.info("[skip] Not modified: " + currentUrl);
+                    // Still need to process child links for BFS completeness
+                    // Use cached child links from link graph if available
+                    int pageId = pageIdMapper.getOrCreatePageId(currentUrl);
+                    List<Integer> cachedChildIds = linkGraphManager.getChildPageIds(pageId);
+                    for (Integer childId : cachedChildIds) {
+                        String childUrl = pageIdMapper.getUrl(childId);
+                        if (childUrl != null && !processedUrls.contains(childUrl)) {
+                            urlQueue.add(childUrl);
+                        }
+                    }
+                    processedUrls.add(currentUrl);
+                    continue;
+                }
+
                 // Fetch the page via HTTP
                 ExceptionHandler.info("[" + (crawledCount + 1) + "/" +
                     Config.MAX_CRAWL_PAGES + "] Crawling: " + currentUrl);
@@ -111,6 +130,14 @@ public class Spider {
 
         // Store total document count for IDF calculation
         dbManager.getSystemConfig().put("totalDocs", String.valueOf(crawledCount));
+
+        // Enhancement 6: Compute PageRank after crawling completes
+        try {
+            PageRankCalculator pageRankCalc = new PageRankCalculator();
+            pageRankCalc.calculate(pageIdMapper.getTotalPages());
+        } catch (Exception e) {
+            ExceptionHandler.handleError("PageRank calculation failed (non-fatal)", e);
+        }
 
         // Final commit to persist all remaining data
         dbManager.commit();
