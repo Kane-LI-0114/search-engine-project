@@ -50,6 +50,7 @@ The WAR is generated at `target/search-engine.war`.
 Run the crawler **before** deploying the web app. It performs a BFS crawl of up to 300 pages and builds the search index:
 
 ```bash
+mvn clean compile
 mvn exec:java -Dexec.mainClass="search.crawler.Spider"
 ```
 
