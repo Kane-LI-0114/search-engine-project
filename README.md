@@ -2,50 +2,11 @@
 
 A full-featured web search engine developed for the **CSIT5930** course at HKUST.
 
-## Features
-
-- **BFS Web Crawler** — crawls up to 300 pages from a configurable start URL
-- **Dual Inverted Index** — separate title and body indexes stored via JDBM HTrees
-- **TF-IDF + Cosine Similarity** ranking with configurable title boost factor
-- **Phrase Search** — double-quoted terms (e.g. `"hong kong"`)
-- **JSP Web Interface** — displays score, metadata, top keywords, parent/child links
-- **Similar Pages** — relevance feedback via top-5 keyword re-query
-
 ---
 
-## Project Structure
+## Quick Start
 
-```
-search-engine-project/
-├── pom.xml                         # Maven build configuration
-├── stopwords.txt                   # English stopwords list
-├── src/
-│   ├── main/
-│   │   ├── search/                 # Java source code (root package: search.*)
-│   │   │   ├── common/             # Config, JDBMManager, ExceptionHandler
-│   │   │   ├── crawler/            # Spider, PageFetcher, URLValidator, PageIDMapper, LinkGraphManager
-│   │   │   │   └── model/          # CrawledPage, LinkRelation
-│   │   │   ├── indexer/            # Indexer, InvertedIndexManager, PorterStemmer, TextPreprocessor
-│   │   │   │   └── model/          # PostingEntry, PostingList, PageMetadata
-│   │   │   ├── search/             # SearchEngine, QueryParser, PhraseMatcher, Ranker, SimilarityCalculator
-│   │   │   │   └── model/          # Query, PhraseTerm, SearchResult
-│   │   │   ├── web/                # SearchServlet, CharacterEncodingFilter
-│   │   │   └── enhancement/        # SimilarPageRecommender
-│   │   ├── resources/
-│   │   │   └── stopwords.txt
-│   │   └── webapp/
-│   │       ├── index.jsp
-│   │       ├── result.jsp
-│   │       └── WEB-INF/web.xml
-│   └── test/
-│       └── search/                 # JUnit test classes (7 files)
-└── target/
-    └── search-engine.war           # Deployable WAR (after build)
-```
-
----
-
-## Requirements
+### 1. Prerequisites
 
 | Tool | Version |
 |------|---------|
@@ -53,34 +14,11 @@ search-engine-project/
 | Apache Maven | 3.6 or higher |
 | Apache Tomcat | 9.0 or higher |
 
----
+### 2. Install local dependencies
 
-## Build
-
-```bash
-# Compile only
-mvn clean compile
-
-# Package as deployable WAR (skip tests)
-mvn clean package -DskipTests
-
-# Package and run tests
-mvn clean package
-```
-
-The WAR file is generated at `target/search-engine.war`.
-
----
-
-## Dependency Installation
-
-This project requires **htmlparser 2.1** and **JDBM 1.0**. If Maven cannot resolve them from Central, install them manually:
+This project requires **htmlparser 2.1** and **JDBM 1.0**, which are not on Maven Central. Install them once:
 
 ```bash
-# Download from:
-#   htmlparser: http://htmlparser.sourceforge.net/
-#   JDBM:       http://jdbm.sourceforge.net/
-
 mvn install:install-file \
   -Dfile=htmlparser.jar \
   -DgroupId=org.htmlparser -DartifactId=htmlparser \
@@ -97,44 +35,78 @@ mvn install:install-file \
   -Dversion=1.0 -Dpackaging=jar
 ```
 
----
+> Download links: [htmlparser](http://htmlparser.sourceforge.net/) · [JDBM](http://jdbm.sourceforge.net/)
 
-## Running the Crawler
+### 3. Build
 
-Before using the web interface, crawl and index the target site:
+```bash
+mvn clean package -DskipTests
+```
+
+The WAR is generated at `target/search-engine.war`.
+
+### 4. Crawl and index
+
+Run the crawler **before** deploying the web app. It performs a BFS crawl of up to 300 pages and builds the search index:
 
 ```bash
 mvn exec:java -Dexec.mainClass="search.crawler.Spider"
 ```
 
-This will:
-1. BFS-crawl up to **300 pages** starting from `https://www.cse.ust.hk/~kwtleung/COMP4321/testpage.htm`
-2. Build title and body inverted indexes
-3. Persist all data to JDBM database files (`searchengine_db.*`)
+This produces `searchengine_db.*` files in the current directory. Crawling typically takes **5–15 minutes**.
 
-Crawling typically takes **5–15 minutes** depending on network speed.
+### 5. Deploy
 
----
+#### Option A — Docker (recommended)
 
-## Deploying the Web Application
+Make sure the crawler has already run and `searchengine_db.*` files exist in the project root, then:
 
 ```bash
-# 1. Build the WAR
-mvn clean package -DskipTests
+docker build -t search-engine .
+docker run -p 8080:8080 search-engine
+```
 
-# 2. Deploy to Tomcat
+The app is deployed as the ROOT context inside the container, so it is accessible at:
+
+```
+http://localhost:8080/
+```
+
+#### Option B — Tomcat (manual)
+
+```bash
+# Copy WAR to Tomcat
 cp target/search-engine.war $CATALINA_HOME/webapps/
 
-# 3. Copy JDBM database files and stopwords to Tomcat's working directory
+# Copy database files and stopwords to Tomcat's working directory
 cp searchengine_db.* $CATALINA_HOME/bin/
-cp stopwords.txt $CATALINA_HOME/bin/
+cp src/main/resources/stopwords.txt $CATALINA_HOME/bin/
 
-# 4. Start Tomcat
+# Start Tomcat
 $CATALINA_HOME/bin/startup.sh        # Linux / macOS
 $CATALINA_HOME/bin/startup.bat       # Windows
 ```
 
-Access the search engine at: **http://localhost:8080/search-engine/**
+Access at:
+
+```
+http://localhost:8080/search-engine/
+```
+
+---
+
+## Features
+
+- **BFS Web Crawler** — crawls up to 300 pages from a configurable start URL
+- **Dual Inverted Index** — separate title and body indexes stored via JDBM HTrees
+- **TF-IDF + Cosine Similarity** ranking with configurable title boost factor
+- **PageRank** — blended into the final score (weight configurable in `Config.java`)
+- **Phrase Search** — double-quoted terms, e.g. `"hong kong"`
+- **Autocomplete** — keyword suggestions as you type
+- **Keyword Browser** — browse all indexed keywords at `/keywords`
+- **Query History** — recent searches stored locally in the browser
+- **Similar Pages** — relevance feedback via top-5 keyword re-query
+- **JSP Web Interface** — score, metadata, top keywords, parent/child links
 
 ---
 
@@ -145,15 +117,49 @@ Access the search engine at: **http://localhost:8080/search-engine/**
 | Keyword search | Type terms and press **Search** |
 | Phrase search | Wrap phrases in double quotes: `"hong kong"` |
 | Mixed query | `"hong kong" university research` |
+| Autocomplete | Suggestions appear as you type |
+| Browse keywords | Click **Browse Keywords** on the home page |
 | Similar pages | Click **Get Similar Pages** on any result |
 
-Results display: relevance score (6 decimal places), page title (link), URL, last-modified date, page size, top 5 keywords, parent and child links.
+Results display: relevance score, page title (link), URL, last-modified date, page size, top 5 keywords, parent and child links.
+
+---
+
+## Project Structure
+
+```
+search-engine-project/
+├── pom.xml
+├── src/
+│   ├── main/
+│   │   ├── search/
+│   │   │   ├── common/             # Config, JDBMManager, ExceptionHandler
+│   │   │   ├── crawler/            # Spider, PageFetcher, URLValidator, PageIDMapper, LinkGraphManager
+│   │   │   │   └── model/          # CrawledPage, LinkRelation
+│   │   │   ├── indexer/            # Indexer, InvertedIndexManager, PorterStemmer, TextPreprocessor
+│   │   │   │   └── model/          # PostingEntry, PostingList, PageMetadata
+│   │   │   ├── search/             # SearchEngine, QueryParser, PhraseMatcher, Ranker, SimilarityCalculator
+│   │   │   │   └── model/          # Query, PhraseTerm, SearchResult
+│   │   │   ├── web/                # SearchServlet, KeywordBrowseServlet, SuggestServlet, CharacterEncodingFilter
+│   │   │   └── enhancement/        # PageRankCalculator, SimilarPageRecommender
+│   │   ├── resources/
+│   │   │   └── stopwords.txt
+│   │   └── webapp/
+│   │       ├── index.jsp
+│   │       ├── result.jsp
+│   │       ├── keywords.jsp
+│   │       └── WEB-INF/web.xml
+│   └── test/
+│       └── search/                 # JUnit test classes
+└── target/
+    └── search-engine.war           # Deployable WAR (after build)
+```
 
 ---
 
 ## Notes
 
-- **Database files (`searchengine_db.*`) are not included** — run the crawler first.
+- **Database files (`searchengine_db.*`) are not committed** — run the crawler first.
 - The Porter stemmer follows the Lab3 specification.
 - The stopwords list is identical to the one provided in Lab3.
-- All persistent data uses JDBM disk-based storage (8 HTrees).
+- All persistent data uses JDBM disk-based storage (9 HTrees).
