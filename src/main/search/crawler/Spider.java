@@ -97,8 +97,8 @@ public class Spider {
 
                 crawledCount++;
 
-                // Commit JDBM transaction periodically (every 10 pages)
-                if (crawledCount % 10 == 0) {
+                // Commit JDBM transaction periodically (every 50 pages)
+                if (crawledCount % 50 == 0) {
                     dbManager.commit();
                     ExceptionHandler.info("Progress: " + crawledCount +
                         " pages crawled, committed to disk.");

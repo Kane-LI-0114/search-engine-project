@@ -59,31 +59,9 @@ public class URLValidator {
             return true; // No metadata stored, should be fetched
         }
 
-        // Allow re-crawl so Spider can compare HTTP Last-Modified with stored timestamp
-        return true;
-    }
-
-    /**
-     * Checks if a fetched page needs to be re-indexed based on its last modified time.
-     * Called after fetching the page headers to compare timestamps.
-     *
-     * @param url          the page URL
-     * @param lastModified the HTTP Last-Modified timestamp from the response
-     * @return true if the page should be re-indexed
-     * @throws IOException if database access fails
-     */
-    public boolean needReindex(String url, long lastModified) throws IOException {
-        Integer pageId = (Integer) dbManager.getUrl2Id().get(url);
-        if (pageId == null) {
-            return true; // Not indexed yet, needs indexing
-        }
-
-        PageMetadata metadata = (PageMetadata) dbManager.getPageMetadata().get(pageId);
-        if (metadata == null) {
-            return true; // No metadata, needs indexing
-        }
-
-        // Re-index if the page has been modified since last index time
-        return lastModified > metadata.getLastModified();
+        // Check if page has been modified
+        PageFetcher fetcher = new PageFetcher();
+        long currentLastModified = fetcher.getLastModified(url);
+        return currentLastModified > metadata.getLastModified() || currentLastModified == 0;
     }
 }
