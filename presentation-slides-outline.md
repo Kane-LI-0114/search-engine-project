@@ -2,7 +2,7 @@
 
 ## Slide 1: Title Slide
 - **Title:** CSIT5930 Web Search Engine Project
-- **Subtitle:** A Full-Featured Search Engine with BFS Crawling, TF-IDF Ranking, and Phrase Search
+- **Subtitle:** BFS Crawling · Dual Inverted Index · TF-IDF Ranking · Phrase Search
 - **Course:** CSIT5930 - Search Engine Technologies
 - **Institution:** The Hong Kong University of Science and Technology (HKUST)
 
@@ -10,133 +10,201 @@
 
 ## Slide 2: System Architecture Overview
 - **High-level architecture diagram** showing four main modules:
-  1. **Crawler Module** - BFS web crawling from seed URL (300 pages)
-  2. **Indexer Module** - Text preprocessing and dual inverted index construction
-  3. **Search Module** - Query parsing, TF-IDF scoring, cosine similarity ranking
-  4. **Web Module** - JSP-based user interface for query and result display
+  1. **Crawler Module** — BFS crawling from seed URL (up to 300 pages)
+  2. **Indexer Module** — Text preprocessing and dual inverted index construction
+  3. **Search Module** — Query parsing, TF-IDF scoring, cosine similarity ranking
+  4. **Web Module** — JSP-based user interface for query and result display
 - **Data flow:** Crawler → Indexer → JDBM Storage ← Search Engine ← Web Interface
-- **JDBM as the central data store** - all core data persisted to disk (no in-memory storage)
+- **JDBM as the central data store** — 8 HTrees, all data persisted to disk
 
 ---
 
+## — INDEXER (Slides 3–6) —
+
 ## Slide 3: Index Database File Structure
 - **JDBM-based persistent storage** with 8 separate HTrees:
-  - `url2id` - URL to PageID mapping (bidirectional with id2url)
-  - `id2url` - PageID to URL mapping
-  - `parentLinks` - Child-to-parent page relationships
-  - `childLinks` - Parent-to-child page relationships
-  - `titleIndex` - Title inverted index (stem → PostingList)
-  - `bodyIndex` - Body inverted index (stem → PostingList)
-  - `pageMetadata` - Page metadata for result display
-  - `systemConfig` - System counters (totalDocs, nextPageId)
-- **PostingList structure:** HashMap<PageID, PostingEntry>
-- **PostingEntry fields:** pageId, termFrequency, maxTermFrequency, positions[]
+  - `url2id` / `id2url` — bidirectional URL ↔ PageID mapping
+  - `parentLinks` / `childLinks` — link graph (child-to-parent, parent-to-child)
+  - `titleIndex` — Title inverted index (stem → PostingList)
+  - `bodyIndex` — Body inverted index (stem → PostingList)
+  - `pageMetadata` — page title, size, last-modified, top-keywords
+  - `systemConfig` — counters (totalDocs, nextPageId)
+- **PostingList structure:** `HashMap<PageID, PostingEntry>`
+- **PostingEntry fields:** pageId, termFrequency, maxTermFrequency, positions[ ]
 - **Two completely independent inverted indexes** for title and body (assignment requirement)
 
 ---
 
-## Slide 4: Core Algorithms - Text Preprocessing
+## Slide 4: Core Algorithms — Text Preprocessing
 - **Pipeline (applied consistently for both indexing and querying):**
   1. Convert to lowercase
   2. Tokenize by non-alphabetic characters
-  3. Filter stopwords using course-provided stopwords.txt
+  3. Filter stopwords using course-provided `stopwords.txt`
   4. Apply Porter Stemming Algorithm (Lab3 implementation)
   5. Record position information for phrase search
 - **Position tracking** enables phrase search across both title and body
+- **Dual pipeline** — same preprocessing used at index time and query time, guaranteeing stem consistency
 
 ---
 
-## Slide 5: Core Algorithms - TF-IDF and Cosine Similarity
+## Slide 5: Core Algorithms — TF-IDF and Cosine Similarity
 - **TF-IDF Formula (assignment specification):**
-  - `TF-IDF = (tf × idf) / max(tf)`
-  - `idf = ln(N / df)`
-  - tf = term frequency in document
-  - max(tf) = maximum term frequency across all terms in document
-  - N = total number of documents, df = document frequency
+  - `TF-IDF = (tf / max_tf) × ln(N / df)`
+  - tf = term frequency in document; max_tf = max term frequency across all terms in document
+  - N = total documents; df = document frequency
 - **Cosine Similarity:**
   - `cos(q, d) = (q · d) / (|q| × |d|)`
   - Query and document represented as TF-IDF weight vectors
 - **Title Boost Mechanism (assignment requirement):**
-  - Effective weight = body_tfidf + title_tfidf × TITLE_BOOST_FACTOR (3.0)
-  - Title matches significantly boost page ranking
+  - `effective_weight = body_tfidf + title_tfidf × TITLE_BOOST_FACTOR (3.0)`
+  - Title matches are weighted 3× over body matches to improve precision
 
 ---
 
-## Slide 6: Core Algorithms - Phrase Search
-- **Double-quoted phrase support:** e.g., `"hong kong" universities`
-- **Implementation using position-based matching:**
-  1. Parse quoted phrases from query
-  2. Look up posting lists for each phrase term
-  3. Find candidate documents (intersection of posting lists)
-  4. Verify consecutive positions: term[i+1] at position(term[i]) + 1
+## Slide 6: Core Algorithms — Phrase Search
+- **Double-quoted phrase support:** e.g. `"hong kong" university`
+- **Implementation — position-based adjacency verification:**
+  1. Parse quoted phrases and bare keywords from query
+  2. Look up posting lists for each phrase token
+  3. Find candidate documents (intersection of all phrase-term posting lists)
+  4. Verify consecutive positions: `pos(term[i+1]) == pos(term[i]) + 1`
 - **Searches both title and body indexes** for phrase matches
-- **Combined with regular term matching** for mixed queries
+- **Combined ranking:** phrase matches + regular term TF-IDF scores merged by Ranker
 
 ---
+
+## — CRAWLER (Slides 7–11) —
 
 ## Slide 7: BFS Crawling Strategy
-- **Breadth-First Search** starting from seed URL
-- **Three mandatory pre-crawl checks:**
-  1. Circular link protection (skip already-processed URLs)
-  2. Index existence check (allow new URLs)
-  3. Page update check (re-crawl if modified since last index)
-- **Metadata extraction:** title, body, links, Last-Modified, page size
-- **Fallback logic:** current time if no Last-Modified header; content length from HTML if no Content-Length
-- **Periodic JDBM commits** (every 10 pages) for crash recovery
+- **Breadth-First Search** starting from a configurable seed URL
+- **Queue-based traversal** ensures breadth-first ordering
+- **Stops when** MAX_CRAWL_PAGES (300) reached or URL queue exhausted
+- **Periodic JDBM commits** every 10 pages for crash recovery
+- **Process per page:**
+  1. Validate URL (3 pre-crawl checks)
+  2. HEAD request to check Last-Modified
+  3. Fetch page body (HTML)
+  4. Index page content
+  5. Enqueue child links
 
 ---
 
-## Slide 8: Installation and Running Steps
-1. **Prerequisites:** Java 8+, Maven 3.6+, Tomcat 9+
-2. **Build:** `mvn clean package`
-3. **Install dependencies:** htmlparser 2.1, JDBM 1.0 (via Maven or local install)
-4. **Run crawler:** `mvn exec:java -Dexec.mainClass="hk.ust.csit5930.search.crawler.Spider"`
-5. **Deploy WAR:** Copy `target/search-engine.war` + DB files to Tomcat
-6. **Access:** http://localhost:8080/search-engine/
+## Slide 8: Pre-Crawl Validation — Three Mandatory Checks
+- **Check 1 — Circular Link Protection:** skip if URL already processed in this session (prevents infinite loops)
+- **Check 2 — Index Existence:** allow if URL not yet in JDBM index (new page → always fetch)
+- **Check 3 — Page Update Check:** compare HTTP `Last-Modified` with stored timestamp; skip if unchanged
+- **Fallback logic:**
+  - No `Last-Modified` header → use current time (always re-index)
+  - No `Content-Length` → derive page size from HTML content length
 
 ---
 
-## Slide 9: Enhancement - Get Similar Pages
-- **Relevance feedback feature** (assignment bonus option 1)
+## Slide 9: Metadata Extraction and Link Graph
+- **Metadata stored per page:** title, last-modified timestamp, page size (bytes), top-5 stemmed keywords
+- **Link extraction:** HTMLParser 2.1 parses `<a href>` tags; relative URLs resolved to absolute
+- **Link Graph structure:**
+  - `childLinks`: parent PageID → list of child PageIDs
+  - `parentLinks`: child PageID → list of parent PageIDs
+- **PageID assignment:** sequential integers via `PageIDMapper`; bidirectional URL↔ID maps in JDBM
+
+---
+
+## Slide 10: Crawler Profiling
+- *(performance table / chart from original slides — 300 pages, timing data, network stats)*
+
+---
+
+## Slide 11: Enhancement — PageRank
+- **Link-based authority scoring** computed after crawl completes
+- **Algorithm:** iterative power-iteration PageRank on the crawled link graph
+  - Damping factor: 0.85 (standard)
+  - Convergence threshold: 1e-6
+- **Blended into final score:** `final_score = cosine_similarity × (1 - PR_WEIGHT) + pagerank × PR_WEIGHT`
+- **PR_WEIGHT configurable** in `Config.java`; default blends TF-IDF and link authority
+- **Practical effect:** authority pages (many inbound links) rank higher for relevant queries
+
+---
+
+## — FRONTEND (Slides 12–16) —
+
+## Slide 12: Web Interface — Servlets and JSP
+- **`SearchServlet`** handles `GET /search`:
+  - Parses `query` parameter → invokes `SearchEngine.search()`
+  - Parses `similar` parameter → invokes `SimilarPageRecommender`
+  - Forwards `results`, `query`, `resultCount` attributes to `result.jsp`
+- **`KeywordBrowseServlet`** handles `GET /keywords` — paginated keyword index
+- **`SuggestServlet`** handles `GET /suggest` — JSON autocomplete endpoint
+- **`CharacterEncodingFilter`** — enforces UTF-8 on all requests and responses
+- **JSP pages:** `index.jsp` (search form), `result.jsp` (results), `keywords.jsp` (browser)
+
+---
+
+## Slide 13: Search Result Display
+- **Each result card shows:**
+  - Relevance score (TF-IDF + PageRank blend)
+  - Page title (clickable link) and URL
+  - Last-modified date and page size
+  - Top 5 keywords (stemmed)
+  - Parent links and child links
+- **Result count** displayed above the list
+- **"Get Similar Pages"** button on each result card triggers relevance feedback
+
+---
+
+## Slide 14: Enhancement — Autocomplete
+- **Keyword suggestions** as user types in the search box
+- **`SuggestServlet`** queries the JDBM `titleIndex` and `bodyIndex` for prefix matches
+- **Returns JSON array** of matching stems, displayed as a dropdown
+- **Improves discoverability** — users can see indexed vocabulary before committing to a query
+
+---
+
+## Slide 15: Enhancement — Similar Pages
+- **Relevance feedback** via top-5 keyword re-query
 - **How it works:**
-  1. User clicks "Get Similar Pages" button on any search result
-  2. System extracts top 5 keywords (stems) from that page's metadata
-  3. Keywords are used to construct an automatic search query
-  4. Results show pages similar to the selected page
-- **Design principle:** Reuses existing SearchEngine logic, no code duplication
-- **Practical use:** Helps users discover related content without reformulating queries
+  1. User clicks **"Get Similar Pages"** on any result
+  2. `SimilarPageRecommender` reads the page's top-5 stored keywords from `pageMetadata`
+  3. Keywords are joined into an automatic search query
+  4. Results display pages similar to the selected page
+- **Design principle:** fully reuses `SearchEngine.search()` — zero code duplication
+- **Display query:** `"Similar pages for: <keyword1> <keyword2> ..."`
 
 ---
 
-## Slide 10: Test Results and Demo
-- **Test scenarios:**
-  - Single keyword search: "algorithm" → relevant results with scores
-  - Multi-keyword search: "computer science" → combined ranking
-  - Phrase search: `"hong kong"` → position-verified consecutive matches
-  - Mixed queries: `"data mining" research` → phrase + individual term
-  - Similar pages: click button → related pages displayed
-- **Performance metrics:**
-  - 300 pages crawled successfully
-  - Index built with dual inverted indexes
-  - Sub-second search response time
-- **(Include screenshots of actual search results)**
+## Slide 16: Enhancement — Query History
+- **Recent searches stored locally** in the browser (`localStorage`)
+- **Displayed on the homepage** below the search box for quick re-access
+- **Client-side only** — no server storage, respects user privacy
+- **Up to N recent queries** shown; oldest queries drop off automatically
 
 ---
 
-## Slide 11: Conclusion
+## — WRAP-UP —
+
+## Slide 17: Demo
+- *(Live demo)*
+- **Scenarios to walk through:**
+  - Keyword search: `algorithm`
+  - Phrase search: `"hong kong"`
+  - Mixed query: `"data mining" research`
+  - Autocomplete: start typing `comp...`
+  - Similar pages: click "Get Similar Pages"
+  - Keyword browser: `/keywords`
+
+---
+
+## Slide 18: Conclusion
 - **System Strengths:**
   - Complete implementation of all assignment requirements
-  - Efficient JDBM-based disk storage (no memory-only data structures)
-  - Accurate phrase search with position-based matching
-  - Title boost mechanism improves result relevance
-  - Clean modular architecture with clear separation of concerns
+  - Efficient JDBM-based disk storage — no in-memory-only data structures
+  - Accurate phrase search with position-based adjacency verification
+  - Title boost + PageRank blend for improved result relevance
+  - Clean modular architecture: Crawler / Indexer / Search / Web
 - **Limitations:**
-  - Single-threaded crawler (could be parallelized)
-  - No incremental index updates (full re-index required)
-  - Basic web UI without advanced features (pagination, autocomplete)
+  - Single-threaded crawler (could be parallelized for speed)
+  - No incremental index updates (re-crawl required for changes)
 - **Future Improvements:**
-  - Multi-threaded crawling for faster data collection
-  - PageRank or HITS algorithm for link-based ranking
-  - Query suggestion and auto-completion
+  - Multi-threaded / distributed crawling
+  - HITS algorithm for hub/authority scoring
   - Snippet generation with keyword highlighting
-  - Support for non-English content and multi-language search
+  - Multi-language support

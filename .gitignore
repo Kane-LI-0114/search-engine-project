@@ -26,3 +26,8 @@ Thumbs.db
 
 # CLAUDE
 CLAUDE.md
+
+#slides
+node_modules
+package-lock.json
+package.json
