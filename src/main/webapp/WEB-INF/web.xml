@@ -11,7 +11,7 @@
     <!-- Search Servlet Configuration -->
     <servlet>
         <servlet-name>SearchServlet</servlet-name>
-        <servlet-class>hk.ust.csit5930.search.web.SearchServlet</servlet-class>
+        <servlet-class>search.web.SearchServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
 
@@ -25,10 +25,30 @@
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
 
-    <!-- Character Encoding Filter -->
+    <!-- Enhancement 2: Keyword Browse Servlet -->
+    <servlet>
+        <servlet-name>KeywordBrowseServlet</servlet-name>
+        <servlet-class>search.web.KeywordBrowseServlet</servlet-class>
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>KeywordBrowseServlet</servlet-name>
+        <url-pattern>/keywords</url-pattern>
+    </servlet-mapping>
+
+    <!-- Enhancement 3: Autocomplete Suggest Servlet -->
+    <servlet>
+        <servlet-name>SuggestServlet</servlet-name>
+        <servlet-class>search.web.SuggestServlet</servlet-class>
+        <load-on-startup>3</load-on-startup>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>SuggestServlet</servlet-name>
+        <url-pattern>/suggest</url-pattern>
+    </servlet-mapping>
     <filter>
         <filter-name>CharacterEncodingFilter</filter-name>
-        <filter-class>hk.ust.csit5930.search.web.CharacterEncodingFilter</filter-class>
+        <filter-class>search.web.CharacterEncodingFilter</filter-class>
         <init-param>
             <param-name>encoding</param-name>
             <param-value>UTF-8</param-value>

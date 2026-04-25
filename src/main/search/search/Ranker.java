@@ -95,7 +95,10 @@ public class Ranker {
             double score = calculator.calculateCosineSimilarity(
                 queryVector, docVector);
             if (score > 0) {
-                SearchResult result = buildSearchResult(pageId, score);
+                double pageRankScore = getPageRankScore(pageId);
+                double combinedScore = score * (1.0 - Config.PAGERANK_WEIGHT)
+                                     + pageRankScore * Config.PAGERANK_WEIGHT;
+                SearchResult result = buildSearchResult(pageId, combinedScore);
                 if (result != null) {
                     results.add(result);
                 }
@@ -190,6 +193,21 @@ public class Ranker {
         }
 
         return docsWithTerm.size();
+    }
+
+    /**
+     * Returns the normalised PageRank score for a page, or 0.0 if unavailable.
+     *
+     * @param pageId the document PageID
+     * @return normalised PageRank score in [0.0, 1.0]
+     */
+    private double getPageRankScore(int pageId) {
+        try {
+            Double pr = (Double) dbManager.getPageRankScores().get(pageId);
+            return (pr != null) ? pr : 0.0;
+        } catch (Exception e) {
+            return 0.0;
+        }
     }
 
     /**

@@ -1,4 +1,5 @@
-FROM tomcat:9.0-jdk17-openjdk
+ARG BASE_IMAGE=tomcat:9.0-jdk17-openjdk
+FROM ${BASE_IMAGE}
 
 # Copy WAR
 COPY target/search-engine.war /usr/local/tomcat/webapps/ROOT.war
