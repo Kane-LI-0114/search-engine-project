@@ -41,6 +41,32 @@ public class URLValidator {
      * @return true if the URL should be fetched
      * @throws Exception if validation fails
      */
+    /**
+     * Determines whether a URL needs to be re-indexed given an already-fetched
+     * Last-Modified timestamp, avoiding a redundant HEAD request.
+     *
+     * @param url                the URL to check
+     * @param remoteLastModified the Last-Modified value already retrieved via HEAD
+     * @return true if the page should be fetched and re-indexed
+     * @throws IOException if database access fails
+     */
+    public boolean needReindex(String url, long remoteLastModified) throws IOException {
+        // Not yet in index — must fetch
+        Integer pageId = (Integer) dbManager.getUrl2Id().get(url);
+        if (pageId == null) {
+            return true;
+        }
+
+        // No stored metadata — must fetch
+        PageMetadata metadata = (PageMetadata) dbManager.getPageMetadata().get(pageId);
+        if (metadata == null) {
+            return true;
+        }
+
+        // Re-index if remote is newer (or unknown, i.e. 0)
+        return remoteLastModified == 0 || remoteLastModified > metadata.getLastModified();
+    }
+
     public boolean needFetch(String url) throws Exception {
         // Check 1: Circular link protection - skip if already processed
         if (processedUrls.contains(url)) {
