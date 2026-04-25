@@ -6,7 +6,31 @@ A full-featured web search engine developed for the **CSIT5930** course at HKUST
 
 ## Quick Start
 
-### 1. Prerequisites
+### Automated deployment (recommended)
+
+A deployment script is provided that handles all steps automatically.
+
+```bash
+./deploy.sh          # Interactive menu
+```
+
+Or specify a mode directly:
+
+```bash
+./deploy.sh docker   # Crawl (if needed) → build → Docker run
+./deploy.sh tomcat   # Crawl (if needed) → build → deploy to Tomcat
+./deploy.sh crawl    # Run crawler only
+./deploy.sh build    # Build WAR only
+./deploy.sh stop     # Stop and remove the running Docker container
+```
+
+The script will check prerequisites, install local Maven dependencies, run the crawler if no database files exist, build the WAR, and deploy.
+
+---
+
+### Manual deployment
+
+#### 1. Prerequisites
 
 | Tool | Version |
 |------|---------|
@@ -14,7 +38,7 @@ A full-featured web search engine developed for the **CSIT5930** course at HKUST
 | Apache Maven | 3.6 or higher |
 | Apache Tomcat | 9.0 or higher |
 
-### 2. Install local dependencies
+#### 2. Install local dependencies
 
 This project requires **htmlparser 2.1** and **JDBM 1.0**, which are not on Maven Central. Install them once:
 
@@ -37,7 +61,7 @@ mvn install:install-file \
 
 > Download links: [htmlparser](http://htmlparser.sourceforge.net/) · [JDBM](http://jdbm.sourceforge.net/)
 
-### 3. Build
+#### 3. Build
 
 ```bash
 mvn clean package -DskipTests
@@ -45,7 +69,7 @@ mvn clean package -DskipTests
 
 The WAR is generated at `target/search-engine.war`.
 
-### 4. Crawl and index
+#### 4. Crawl and index
 
 Run the crawler **before** deploying the web app. It performs a BFS crawl of up to 300 pages and builds the search index:
 
@@ -56,9 +80,9 @@ mvn exec:java -Dexec.mainClass="search.crawler.Spider"
 
 This produces `searchengine_db.*` files in the current directory. Crawling typically takes **5–15 minutes**.
 
-### 5. Deploy
+#### 5. Deploy
 
-#### Option A — Docker (recommended)
+##### Option A — Docker (recommended)
 
 Make sure the crawler has already run and `searchengine_db.*` files exist in the project root, then:
 
@@ -73,7 +97,7 @@ The app is deployed as the ROOT context inside the container, so it is accessibl
 http://localhost:8080/
 ```
 
-#### Option B — Tomcat (manual)
+##### Option B — Tomcat (manual)
 
 ```bash
 # Copy WAR to Tomcat

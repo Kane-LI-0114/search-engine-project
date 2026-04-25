@@ -6,7 +6,6 @@ import search.search.SearchEngine;
 import search.search.model.SearchResult;
 
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,7 +19,6 @@ import java.util.List;
  * and forwards results to result.jsp for display.
  * Also handles "get similar pages" requests for the enhancement feature.
  */
-@WebServlet(urlPatterns = {"/search"})
 public class SearchServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
