@@ -28,6 +28,8 @@ Thumbs.db
 CLAUDE.md
 
 #slides
+speech-indexer.md
+workflow-explanation.md
 node_modules
 package-lock.json
 package.json
