@@ -155,6 +155,8 @@ Results display: relevance score, page title (link), URL, last-modified date, pa
 ```
 search-engine-project/
 ├── pom.xml
+├── deploy.sh
+├── Dockerfile
 ├── src/
 │   ├── main/
 │   │   ├── search/
