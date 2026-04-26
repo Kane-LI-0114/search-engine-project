@@ -37,8 +37,8 @@
         .theme-dark .kw-pill{border-color:rgba(255,255,255,0.1);}
         .summary{font-size:14px;color:var(--muted);margin-bottom:16px;}
         .error{color:#d32f2f;padding:10px;background:#fce4ec;border-radius:6px;}
-        .theme-toggle{display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px 12px;border-radius:999px;cursor:pointer;font-size:13px;color:var(--text);}
-        .theme-dark .theme-toggle{border:1px solid rgba(255,255,255,0.06);}
+        .theme-toggle{display:inline-flex;align-items:center;gap:8px;background:transparent;border:2px solid rgba(0,0,0,0.06);padding:8px 12px;border-radius:999px;cursor:pointer;font-size:13px;color:var(--text);}
+        .theme-dark .theme-toggle{border:2px solid rgba(255,255,255,0.06);}
     </style>
 </head>
 <body>
@@ -63,7 +63,7 @@
 <%
     @SuppressWarnings("unchecked")
     TreeMap<Character, List<String>> grouped =
-        (TreeMap<Character, List<String>>) request.getAttribute("grouped");
+            (TreeMap<Character, List<String>>) request.getAttribute("grouped");
     Character activeLetter = (Character) request.getAttribute("activeLetter");
     Integer totalCount = (Integer) request.getAttribute("totalCount");
     String error = (String) request.getAttribute("error");
@@ -79,10 +79,10 @@
             </div>
         </div>
         <div style="display:flex;gap:12px;align-items:center;">
-            <div class="nav-links">
-                <a href="index.jsp">&#128269; Search</a>
-                <a href="keywords">All Keywords</a>
-            </div>
+            <button onclick="window.location.href='index.jsp'" class="theme-toggle" aria-label="Homepage" title="Homepage">
+                    <span>🏠</span>
+                    Homepage
+            </button>
             <button id="themeToggle" class="theme-toggle" aria-pressed="false" title="Toggle light/dark">
                 <span id="themeIcon">&#127769;</span>
                 <span id="themeLabel">Dark</span>
@@ -134,28 +134,28 @@
 </div>
 
 <script>
-(function(){
-    var rootEl = document.documentElement;
-    var toggle = document.getElementById('themeToggle');
-    var icon   = document.getElementById('themeIcon');
-    var label  = document.getElementById('themeLabel');
-    var LS_KEY = 'csit5930_theme_v1';
-    function applyTheme(t){
-        if(t==='dark') rootEl.classList.add('theme-dark');
-        else rootEl.classList.remove('theme-dark');
-        if(toggle) toggle.setAttribute('aria-pressed', t==='dark'?'true':'false');
-        if(icon)  icon.textContent  = t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19';
-        if(label) label.textContent = t==='dark'?'Light':'Dark';
-        try{ localStorage.setItem(LS_KEY,t); }catch(e){}
-    }
-    var saved=(function(){ try{ return localStorage.getItem(LS_KEY); }catch(e){ return null; }})();
-    if(saved) applyTheme(saved==='dark'?'dark':'light');
-    else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme('dark');
-    else applyTheme('light');
-    if(toggle) toggle.addEventListener('click',function(){
-        applyTheme(rootEl.classList.contains('theme-dark')?'light':'dark');
-    });
-})();
+    (function(){
+        var rootEl = document.documentElement;
+        var toggle = document.getElementById('themeToggle');
+        var icon   = document.getElementById('themeIcon');
+        var label  = document.getElementById('themeLabel');
+        var LS_KEY = 'csit5930_theme_v1';
+        function applyTheme(t){
+            if(t==='dark') rootEl.classList.add('theme-dark');
+            else rootEl.classList.remove('theme-dark');
+            if(toggle) toggle.setAttribute('aria-pressed', t==='dark'?'true':'false');
+            if(icon)  icon.textContent  = t==='dark'?'\u2600\uFE0F':'\uD83C\uDF19';
+            if(label) label.textContent = t==='dark'?'Light':'Dark';
+            try{ localStorage.setItem(LS_KEY,t); }catch(e){}
+        }
+        var saved=(function(){ try{ return localStorage.getItem(LS_KEY); }catch(e){ return null; }})();
+        if(saved) applyTheme(saved==='dark'?'dark':'light');
+        else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches) applyTheme('dark');
+        else applyTheme('light');
+        if(toggle) toggle.addEventListener('click',function(){
+            applyTheme(rootEl.classList.contains('theme-dark')?'light':'dark');
+        });
+    })();
 </script>
 </body>
 </html>

@@ -259,11 +259,16 @@
                 <p>HKUST - Web Search Engine Project</p>
             </div>
         </div>
-
-        <button id="themeToggle" class="theme-toggle" aria-pressed="false" title="Toggle light/dark">
-            <span id="themeIcon">🌙</span>
-            <span id="themeLabel">Dark</span>
-        </button>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <button onclick="window.location.href='index.jsp'" class="theme-toggle" aria-label="Homepage" title="Homepage">
+                <span>🏠</span>
+                Homepage
+            </button>
+            <button id="themeToggle" class="theme-toggle" aria-pressed="false" title="Toggle light/dark">
+                <span id="themeIcon">&#127769;</span>
+                <span id="themeLabel">Dark</span>
+            </button>
+        </div>
     </header>
 
     <!-- Search form -->

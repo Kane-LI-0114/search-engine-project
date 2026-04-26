@@ -80,7 +80,7 @@
             align-items:center;
             gap:8px;
             background:transparent;
-            border:1px solid rgba(0,0,0,0.06);
+            border:2px solid rgba(0,0,0,0.06);
             padding:8px 12px;
             border-radius:999px;
             cursor:pointer;
@@ -88,7 +88,7 @@
             color:var(--text);
         }
         .theme-dark .theme-toggle{
-            border:1px solid rgba(255,255,255,0.06);
+            border:2px solid rgba(255,255,255,0.06);
             color:var(--text);
         }
         .search-card{ margin-top:6px; }
@@ -300,6 +300,8 @@
                 try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch(e){ return []; }
             }
             function saveHistory(q){
+                if (getHistory().contain(q))
+                    return
                 let h = getHistory().filter(function(x){ return x !== q; });
                 h.unshift(q);
                 if (h.length > MAX_HIST) h = h.slice(0, MAX_HIST);
@@ -313,9 +315,10 @@
                 let html = '<div style="margin-top:16px;font-size:13px;color:var(--muted);">'
                     + '<span style="font-weight:600;">Recent searches:</span> ';
                 h.forEach(function(q, i){
-                    html += '<a href="search?query=' + encodeURIComponent(q)
+                    html += '<a href="search?query='
+                        + encodeURIComponent(q)
                         + '" style="color:var(--accent);text-decoration:none;margin-right:10px;">'
-                        + q.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                        + q
                         + '</a>';
                 });
                 html += '<button onclick="clearHistory()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:12px;margin-left:4px;">Clear</button>';
@@ -327,7 +330,7 @@
                 renderHistory();
             };
             form.addEventListener('submit', function(){
-                const q = input.value.trim();
+                const q = input.value.trim().replaceAll('&quot;', '"');
                 if (q) saveHistory(q);
             });
             renderHistory();
