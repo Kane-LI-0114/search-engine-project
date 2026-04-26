@@ -124,7 +124,7 @@ public class PageFetcher {
             NodeList titleNodes = nodeList.extractAllNodesThatMatch(
                 new TagNameFilter("title"), true);
             if (titleNodes != null && titleNodes.size() > 0) {
-                String title = titleNodes.elementAt(0).toPlainTextString().trim();
+                String title = titleNodes.elementAt(0).toHtml().trim();
                 title = Jsoup.parse(title).text();
                 if (!title.isEmpty()) {
                     return title;
@@ -149,14 +149,14 @@ public class PageFetcher {
             NodeList bodyNodes = nodeList.extractAllNodesThatMatch(
                 new TagNameFilter("body"), true);
             if (bodyNodes != null && bodyNodes.size() > 0) {
-                String body = bodyNodes.elementAt(0).toPlainTextString().trim();
+                String body = bodyNodes.elementAt(0).toHtml();
                 body = Jsoup.parse(body).text();
                 return body;
             }
             // Fallback: use all text content by visiting each node
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < nodeList.size(); i++) {
-                String bodyi = nodeList.elementAt(i).toPlainTextString();
+                String bodyi = nodeList.elementAt(i).toHtml();
                 bodyi = Jsoup.parse(bodyi).text();
                 sb.append(bodyi);
             }
