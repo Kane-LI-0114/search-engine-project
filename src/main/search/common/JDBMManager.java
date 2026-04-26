@@ -34,6 +34,9 @@ public class JDBMManager {
     // Enhancement 6: PageRank scores
     private HTree pageRankScores; // Integer pageId -> Double score
 
+    // Enhancement 8: Pre-computed document magnitudes for cosine normalization
+    private HTree docMagnitudes;  // Integer pageId -> Double magnitude
+
     /**
      * Private constructor. Initializes JDBM RecordManager and loads or creates all HTrees.
      *
@@ -50,6 +53,7 @@ public class JDBMManager {
         pageMetadata = loadOrCreateHTree("pageMetadata");
         systemConfig = loadOrCreateHTree("systemConfig");
         pageRankScores = loadOrCreateHTree("pageRankScores");
+        docMagnitudes = loadOrCreateHTree("docMagnitudes");
     }
 
     /**
@@ -111,6 +115,9 @@ public class JDBMManager {
 
     /** Returns the PageRank scores HTree (pageId -> Double). */
     public HTree getPageRankScores() { return pageRankScores; }
+
+    /** Returns the pre-computed document magnitudes HTree (pageId -> Double). */
+    public HTree getDocMagnitudes() { return docMagnitudes; }
 
     /**
      * Commits all pending changes to disk.
