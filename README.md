@@ -124,7 +124,7 @@ http://localhost:8080/search-engine/
 
 - **BFS Web Crawler** — crawls up to 300 pages from a configurable start URL
 - **Dual Inverted Index** — separate title and body indexes stored via JDBM HTrees
-- **TF-IDF + Cosine Similarity** ranking with configurable title boost factor
+- **TF-IDF + Cosine Similarity** ranking with configurable title boost factor and full-document magnitude normalization
 - **PageRank** — blended into the final score (weight configurable in `Config.java`)
 - **Phrase Search** — double-quoted terms, e.g. `"hong kong"`
 - **Autocomplete** — keyword suggestions as you type
@@ -187,4 +187,5 @@ search-engine-project/
 - **Database files (`searchengine_db.*`) are not committed** — run the crawler first.
 - The Porter stemmer follows the Lab3 specification.
 - The stopwords list is identical to the one provided in Lab3.
-- All persistent data uses JDBM disk-based storage (9 HTrees).
+- All persistent data uses JDBM disk-based storage (10 HTrees).
+- Document magnitudes are pre-computed at indexing time for correct cosine normalization (all terms, not just query terms).

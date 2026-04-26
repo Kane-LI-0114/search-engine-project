@@ -131,6 +131,18 @@ public class Spider {
         // Store total document count for IDF calculation
         dbManager.getSystemConfig().put("totalDocs", String.valueOf(crawledCount));
 
+        // Enhancement 8: Pre-compute document magnitudes for cosine normalization
+        // This computes |d| = sqrt(Σ(w²)) for ALL terms in each document,
+        // enabling correct cosine normalization without building full vectors at search time.
+        try {
+            indexer.computeDocumentMagnitudes(crawledCount);
+            ExceptionHandler.info("Document magnitudes computed for " +
+                crawledCount + " pages.");
+        } catch (Exception e) {
+            ExceptionHandler.handleError(
+                "Document magnitude computation failed (non-fatal)", e);
+        }
+
         // Enhancement 6: Compute PageRank after crawling completes
         try {
             PageRankCalculator pageRankCalc = new PageRankCalculator();

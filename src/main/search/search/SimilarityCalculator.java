@@ -43,6 +43,27 @@ public class SimilarityCalculator {
     public double calculateCosineSimilarity(Map<String, Double> queryVector,
                                             Map<String, Double> docVector)
             throws Exception {
+        double docMagnitude = calculateMagnitude(docVector);
+        return calculateCosineSimilarity(queryVector, docVector, docMagnitude);
+    }
+
+    /**
+     * Calculates cosine similarity using a pre-computed document magnitude.
+     * This allows using the full document magnitude (computed from ALL terms)
+     * even when the docVector only contains query terms (for efficiency).
+     *
+     * Formula: cosine_similarity = dot_product / (|query| * precomputedDocMagnitude)
+     *
+     * @param queryVector             the query term weight vector
+     * @param docVector               the document term weight vector (may be partial)
+     * @param precomputedDocMagnitude the full document vector magnitude (L2 norm)
+     * @return the cosine similarity score, or 0.0 if either magnitude is zero
+     * @throws Exception if calculation fails
+     */
+    public double calculateCosineSimilarity(Map<String, Double> queryVector,
+                                            Map<String, Double> docVector,
+                                            double precomputedDocMagnitude)
+            throws Exception {
         // Calculate dot product: sum of (queryWeight * docWeight) for matching terms
         double dotProduct = 0.0;
         for (Map.Entry<String, Double> entry : queryVector.entrySet()) {
@@ -54,16 +75,15 @@ public class SimilarityCalculator {
             }
         }
 
-        // Calculate vector magnitudes (L2 norms)
+        // Calculate query vector magnitude (L2 norm)
         double queryMagnitude = calculateMagnitude(queryVector);
-        double docMagnitude = calculateMagnitude(docVector);
 
         // Avoid division by zero
-        if (queryMagnitude == 0.0 || docMagnitude == 0.0) {
+        if (queryMagnitude == 0.0 || precomputedDocMagnitude == 0.0) {
             return 0.0;
         }
 
-        return dotProduct / (queryMagnitude * docMagnitude);
+        return dotProduct / (queryMagnitude * precomputedDocMagnitude);
     }
 
     /**

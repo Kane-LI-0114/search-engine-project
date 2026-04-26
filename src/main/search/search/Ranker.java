@@ -84,16 +84,26 @@ public class Ranker {
         // Score each candidate document
         List<SearchResult> results = new ArrayList<>();
         for (int pageId : candidateIds) {
-            // Build document vector with title boost
+            // Build document vector with title boost (query terms only for efficiency)
             Map<String, Double> docVector = buildDocumentVector(
                 pageId, queryTermFreq.keySet(), totalDocs);
             if (docVector.isEmpty()) {
                 continue;
             }
 
-            // Calculate cosine similarity between query and document vectors
-            double score = calculator.calculateCosineSimilarity(
-                queryVector, docVector);
+            // Use pre-computed full document magnitude for correct cosine normalization.
+            // Pre-computed magnitude includes ALL terms' TF-IDF weights in the document,
+            // not just query terms. Falls back to computing from partial docVector
+            // if pre-computed value is unavailable (e.g., legacy index data).
+            Double precomputedMag = (Double) dbManager.getDocMagnitudes().get(pageId);
+            double score;
+            if (precomputedMag != null) {
+                score = calculator.calculateCosineSimilarity(
+                    queryVector, docVector, precomputedMag);
+            } else {
+                score = calculator.calculateCosineSimilarity(
+                    queryVector, docVector);
+            }
             if (score > 0) {
                 double pageRankScore = getPageRankScore(pageId);
                 double combinedScore = score * (1.0 - Config.PAGERANK_WEIGHT)
