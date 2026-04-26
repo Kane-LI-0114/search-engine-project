@@ -5,6 +5,7 @@ import search.common.JDBMManager;
 import search.crawler.model.CrawledPage;
 import search.indexer.model.PageMetadata;
 import search.indexer.model.PostingEntry;
+import search.indexer.model.PostingList;
 
 import java.util.*;
 
@@ -89,6 +90,86 @@ public class Indexer {
             page.getLastModified(), page.getPageSize(), topKeywords
         );
         dbManager.getPageMetadata().put(pageId, metadata);
+    }
+
+    /**
+     * Computes pre-computed document magnitudes for all indexed documents.
+     * The magnitude |d| = sqrt(Σ(w(t,d)²)) includes ALL terms in each document,
+     * where w(t,d) = body_tfidf(t,d) + title_tfidf(t,d) * TITLE_BOOST_FACTOR.
+     * This enables correct cosine normalization without needing to build
+     * full document vectors at search time.
+     *
+     * @param totalDocs the total number of crawled documents
+     * @throws Exception if index access fails
+     */
+    public void computeDocumentMagnitudes(int totalDocs) throws Exception {
+        jdbm.htree.HTree bodyIndex = dbManager.getBodyIndex();
+        jdbm.htree.HTree titleIndex = dbManager.getTitleIndex();
+
+        // Map pageId -> sum of squared combined TF-IDF weights
+        Map<Integer, Double> squaredSums = new HashMap<>();
+
+        // Collect all unique stems from both indexes
+        Set<String> allStems = new HashSet<>();
+        jdbm.helper.FastIterator bodyKeys = bodyIndex.keys();
+        String stem;
+        while ((stem = (String) bodyKeys.next()) != null) {
+            allStems.add(stem);
+        }
+        jdbm.helper.FastIterator titleKeys = titleIndex.keys();
+        while ((stem = (String) titleKeys.next()) != null) {
+            allStems.add(stem);
+        }
+
+        // For each unique stem, compute its contribution to document magnitudes
+        for (String term : allStems) {
+            // Compute combined document frequency (df) for this stem
+            Set<Integer> docsWithTerm = new HashSet<>();
+            PostingList bodyPl = (PostingList) bodyIndex.get(term);
+            PostingList titlePl = (PostingList) titleIndex.get(term);
+            if (bodyPl != null) docsWithTerm.addAll(bodyPl.getEntries().keySet());
+            if (titlePl != null) docsWithTerm.addAll(titlePl.getEntries().keySet());
+
+            int df = docsWithTerm.size();
+            if (df == 0) continue;
+
+            double idf = Math.log((double) totalDocs / df);
+
+            // For each document containing this term, compute combined weight
+            for (int pageId : docsWithTerm) {
+                double weight = 0.0;
+
+                // Body TF-IDF component: tfidf = (tf * idf) / maxTf
+                if (bodyPl != null) {
+                    PostingEntry bodyEntry = bodyPl.getEntry(pageId);
+                    if (bodyEntry != null) {
+                        weight += (bodyEntry.getTermFrequency() * idf)
+                                / bodyEntry.getMaxTermFrequency();
+                    }
+                }
+
+                // Title TF-IDF component with boost
+                if (titlePl != null) {
+                    PostingEntry titleEntry = titlePl.getEntry(pageId);
+                    if (titleEntry != null) {
+                        weight += (titleEntry.getTermFrequency() * idf)
+                                / titleEntry.getMaxTermFrequency()
+                                * Config.TITLE_BOOST_FACTOR;
+                    }
+                }
+
+                if (weight > 0) {
+                    squaredSums.merge(pageId, weight * weight, Double::sum);
+                }
+            }
+        }
+
+        // Store magnitudes: |d| = sqrt(Σ(w²))
+        jdbm.htree.HTree magnitudesTree = dbManager.getDocMagnitudes();
+        for (Map.Entry<Integer, Double> entry : squaredSums.entrySet()) {
+            double magnitude = Math.sqrt(entry.getValue());
+            magnitudesTree.put(entry.getKey(), magnitude);
+        }
     }
 
     /**
