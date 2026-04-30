@@ -125,16 +125,16 @@ run_crawler() {
     step "Crawler"
 
     if ls $DB_PATTERN &>/dev/null 2>&1; then
-        warn "Database files (searchengine_db.*) already exist. Skipping crawl."
-        warn "To re-crawl, delete them first: rm searchengine_db.*"
-        return 0
+        info "Database files found. Re-crawling to update pages..."
+    else
+        info "No database files found. Starting fresh crawl..."
     fi
 
-    info "No database files found. Starting crawler (BFS, up to 300 pages)..."
-    info "This typically takes 5–15 minutes."
+    info "Crawling (BFS, up to 300 pages)..."
+    info "This typically takes ~8-10 seconds."
     mvn clean compile -q
     mvn exec:java -Dexec.mainClass="search.crawler.Spider"
-    success "Crawl complete. Database files generated."
+    success "Crawl complete. Database files updated."
 }
 
 # ---------------------------------------------------------------------------
