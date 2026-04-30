@@ -52,6 +52,12 @@ public class Spider {
         ExceptionHandler.info("Starting BFS crawl from: " + Config.START_URL);
         ExceptionHandler.info("Target pages: " + Config.MAX_CRAWL_PAGES);
 
+        // Detect whether this is a first crawl (no existing index data) or a re-crawl.
+        // On first crawl every URL is new, so HEAD checks are pure overhead.
+        String totalDocsStr = (String) dbManager.getSystemConfig().get("totalDocs");
+        boolean firstCrawl = (totalDocsStr == null || "0".equals(totalDocsStr));
+        ExceptionHandler.info("Crawl mode: " + (firstCrawl ? "FIRST CRAWL (HEAD skip)" : "RE-CRAWL (HEAD enabled)"));
+
         // BFS queue for URL traversal (assignment requirement: must use BFS)
         Queue<String> urlQueue = new LinkedList<>();
         urlQueue.add(Config.START_URL);
@@ -70,22 +76,25 @@ public class Spider {
             processedUrls.add(currentUrl);
 
             try {
-                // Check Last-Modified via HEAD request before full fetch
-                long remoteLastModified = pageFetcher.getLastModified(currentUrl);
-                if (!urlValidator.needReindex(currentUrl, remoteLastModified)) {
-                    ExceptionHandler.info("[skip] Not modified: " + currentUrl);
-                    // Still need to process child links for BFS completeness
-                    // Use cached child links from link graph if available
-                    int pageId = pageIdMapper.getOrCreatePageId(currentUrl);
-                    List<Integer> cachedChildIds = linkGraphManager.getChildPageIds(pageId);
-                    for (Integer childId : cachedChildIds) {
-                        String childUrl = pageIdMapper.getUrl(childId);
-                        if (childUrl != null && !processedUrls.contains(childUrl)) {
-                            urlQueue.add(childUrl);
+                // On re-crawl, check Last-Modified via HEAD before fetching.
+                // On first crawl, skip HEAD entirely — every URL is new.
+                if (!firstCrawl) {
+                    long remoteLastModified = pageFetcher.getLastModified(currentUrl);
+                    if (!urlValidator.needReindex(currentUrl, remoteLastModified)) {
+                        ExceptionHandler.info("[skip] Not modified: " + currentUrl);
+                        // Still need to process child links for BFS completeness
+                        // Use cached child links from link graph if available
+                        int pageId = pageIdMapper.getOrCreatePageId(currentUrl);
+                        List<Integer> cachedChildIds = linkGraphManager.getChildPageIds(pageId);
+                        for (Integer childId : cachedChildIds) {
+                            String childUrl = pageIdMapper.getUrl(childId);
+                            if (childUrl != null && !processedUrls.contains(childUrl)) {
+                                urlQueue.add(childUrl);
+                            }
                         }
+                        processedUrls.add(currentUrl);
+                        continue;
                     }
-                    processedUrls.add(currentUrl);
-                    continue;
                 }
 
                 // Fetch the page via HTTP
