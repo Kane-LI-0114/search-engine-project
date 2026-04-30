@@ -108,6 +108,11 @@ public class Spider {
                 // Index the page: build inverted indexes and store metadata
                 indexer.indexPage(pageId, page);
 
+                // Clear stale links for re-crawled pages before rebuilding
+                if (pageIdMapper.hasUrl(currentUrl)) {
+                    linkGraphManager.clearChildLinks(pageId);
+                }
+
                 // Process child links: assign IDs, record relationships, enqueue
                 List<String> childLinks = page.getChildLinks();
                 for (String childUrl : childLinks) {
