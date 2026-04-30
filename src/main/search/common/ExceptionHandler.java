@@ -1,15 +1,39 @@
 package search.common;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Formatter;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 /**
  * Centralized exception handling utility for the search engine.
  * Provides consistent logging and error reporting across all modules.
+ * Uses a fixed English format to avoid locale-dependent output.
  */
 public final class ExceptionHandler {
 
     private static final Logger LOGGER = Logger.getLogger("CSIT5930-SearchEngine");
+
+    static {
+        LOGGER.setUseParentHandlers(false);
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setFormatter(new Formatter() {
+            private final SimpleDateFormat dateFormat =
+                new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
+            @Override
+            public String format(LogRecord record) {
+                return String.format("[%s] [%s] %s%n",
+                    dateFormat.format(new Date(record.getMillis())),
+                    record.getLevel().getName(),
+                    record.getMessage());
+            }
+        });
+        LOGGER.addHandler(handler);
+    }
 
     private ExceptionHandler() {
         // Prevent instantiation
