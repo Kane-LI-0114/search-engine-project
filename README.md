@@ -78,7 +78,7 @@ mvn clean compile
 mvn exec:java -Dexec.mainClass="search.crawler.Spider"
 ```
 
-This produces `searchengine_db.*` files in the current directory. Crawling typically takes **5–15 minutes**.
+This produces `searchengine_db.*` files in the current directory. Crawling typically takes **~8–10 seconds** (for a fresh crawl of 300 pages).
 
 #### 5. Deploy
 
@@ -88,7 +88,7 @@ Make sure the crawler has already run and `searchengine_db.*` files exist in the
 
 ```bash
 docker build -t search-engine .
-docker run -p 8080:8080 search-engine
+docker run -d -p 8080:8080 --name search-engine search-engine
 ```
 
 The app is deployed as the ROOT context inside the container, so it is accessible at:
