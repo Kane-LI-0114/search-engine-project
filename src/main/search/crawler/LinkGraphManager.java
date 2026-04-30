@@ -27,6 +27,41 @@ public class LinkGraphManager {
     }
 
     /**
+     * Removes all link relationships for a parent page and cleans up
+     * the corresponding backward references in child pages. Used before
+     * rebuilding links on a re-crawl to prevent stale link data.
+     *
+     * @param parentPageId the PageID whose links should be cleared
+     * @throws IOException if database operation fails
+     */
+    @SuppressWarnings("unchecked")
+    public void clearChildLinks(int parentPageId) throws IOException {
+        // Get current child IDs for this parent
+        ArrayList<Integer> children = (ArrayList<Integer>)
+            dbManager.getChildLinks().get(parentPageId);
+        if (children == null || children.isEmpty()) {
+            return;
+        }
+
+        // Remove this parent from each child's parentLinks (backward cleanup)
+        for (int childId : children) {
+            ArrayList<Integer> parents = (ArrayList<Integer>)
+                dbManager.getParentLinks().get(childId);
+            if (parents != null) {
+                parents.remove(Integer.valueOf(parentPageId));
+                if (parents.isEmpty()) {
+                    dbManager.getParentLinks().remove(childId);
+                } else {
+                    dbManager.getParentLinks().put(childId, parents);
+                }
+            }
+        }
+
+        // Remove the parent's entry in childLinks
+        dbManager.getChildLinks().remove(parentPageId);
+    }
+
+    /**
      * Adds a parent-child link relationship between two pages.
      * Updates both forward (parent->child) and backward (child->parent) indexes.
      * Prevents duplicate link entries.
